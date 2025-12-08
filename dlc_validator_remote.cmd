@@ -20,13 +20,13 @@ set LOG=dlc_check_log.txt
 
 echo ================================================ > "%LOG%"
 echo VERIFICATION DLC / CARRIERCONFIG / SECURITY >> "%LOG%"
-echo Fecha de ejecución: %DATE% >> "%LOG%"
+echo Fecha de ejecucion: %DATE% >> "%LOG%"
 echo ================================================ >> "%LOG%"
 echo. >> "%LOG%"
 
 echo ================================================
 echo VERIFICATION DLC / CARRIERCONFIG / SECURITY
-echo Fecha de ejecución: %DATE%
+echo Fecha de ejecucion: %DATE%
 echo ================================================
 echo.
 
@@ -61,7 +61,7 @@ echo. >> "%LOG%"
 echo Nota: SDK 34 corresponde a Android 14, oficialmente requerido para DLC v2. >> "%LOG%"
 echo Solucion: Si el SDK es inferior a 34, el fabricante de equipos originales debe actualizar la ROM a Android 14 o superior. >> "%LOG%"
 echo. >> "%LOG%"
-echo Nota: ro.build.type Normalmente debería ser «user» en los dispositivos de producción. >> "%LOG%"
+echo Nota: ro.build.type Normalmente debería ser «user» en los dispositivos de produccion. >> "%LOG%"
 echo Solucion: Si el valor es «eng» o «userdebug», es solo para uso no comercial en laboratorio. >> "%LOG%"
 echo. >> "%LOG%"
 echo.
@@ -78,7 +78,7 @@ echo. >> "%LOG%"
 echo Nota: green  = Arranque verificado con clave OEM (estado esperado en produccion). >> "%LOG%"
 echo Nota: yellow = Imagen valida pero no firmada con la clave principal del OEM. >> "%LOG%"
 echo Nota: orange = Bootloader desbloqueado; el sistema no es confiable para produccion. >> "%LOG%"
-echo Nota: red    = Imagen corrupta o firma inválida (no arranca normalmente). >> "%LOG%"
+echo Nota: red    = Imagen corrupta o firma invalida (no arranca normalmente). >> "%LOG%"
 echo. >> "%LOG%"
 echo Solucion:    El OEM debe entregar equipos comerciales con verifiedbootstate en "green". >> "%LOG%"
 echo. >> "%LOG%"
@@ -119,9 +119,9 @@ adb shell pm path com.trustonic.teeservice >> "%LOG%"
 
 
 echo. >> "%LOG%"
-echo Nota: Esta sección verifica si el fabricante integró correctamente el cliente DLC, Si no aparecen paquetes de Trustonic/DLC, el cliente no esta instalado como aplicación de sistema. >> "%LOG%"
+echo Nota: Esta seccion verifica si el fabricante integro correctamente el cliente DLC, Si no aparecen paquetes de Trustonic/DLC, el cliente no esta instalado como aplicacion de sistema. >> "%LOG%"
 echo. >> "%LOG%"
-echo Solucion: El OEM debe integrar el APK de DLC como aplicación de sistema según la guía de integración de Trustonic. >> "%LOG%"
+echo Solucion: El OEM debe integrar el APK de DLC como aplicacion de sistema segun la guia de integracion de Trustonic. >> "%LOG%"
 echo           /system/priv-app/ - /system_ext/priv-app/ - /apex/com.android.devicelock/ >> "%LOG%"
 echo. >> "%LOG%"
 echo.
@@ -235,7 +235,7 @@ adb shell settings get global adb_enabled >> "%LOG%"
 echo Nota: 1 = depuracion USB activada. >> "%LOG%"
 echo Nota: 0 = depuracion USB desactivada. >> "%LOG%"
 echo. >> "%LOG%"
-echo Solución: En dispositivos de producción con MDM/DLC activos, ambos valores deben permanecer en 0 para evitar vectores de ataque por ADB. Si alguno está en 1, debe justificarse únicamente en entornos de prueba controlados. >> "%LOG%"
+echo Solucion: En dispositivos de produccion con MDM/DLC activos, ambos valores deben permanecer en 0 para evitar vectores de ataque por ADB. Si alguno está en 1, debe justificarse unicamente en entornos de prueba controlados. >> "%LOG%"
 echo. >> "%LOG%"
 echo.
 echo ========================================================================================= >> "%LOG%"
