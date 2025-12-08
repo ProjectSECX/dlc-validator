@@ -264,5 +264,3 @@ echo ================================================ >> "%LOG%"
 echo.
 echo Process completed. File generated.: %LOG%
 set /p dummy="Press ENTER to close this window.... "
-
-Add initial DLC Validator remote script
