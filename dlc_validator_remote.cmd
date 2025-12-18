@@ -100,7 +100,7 @@ echo [3] DLC PACKAGES / TRUSTONIC
 echo [3] DLC PACKAGES / TRUSTONIC >> "%LOG%"
 echo. >> "%LOG%"
 echo TRUSTONIC STANDARD DLC PACKAGES LIST >> "%LOG%"
-adb shell pm list packages | findstr /I "dlc devicelock trustonic standard carrier telecoms telcelam teeservice tee" >> "%LOG%"
+adb shell pm list packages | findstr /I "dlc devicelock trustonic standard telecoms telcelam teeservice tee" >> "%LOG%"
 echo. >> "%LOG%"
 REM --------------------------------------------------------------------------------------
 REM 2. OBTENCION DE RUTAS (PATHS) DE PAQUETES CRITICOS Y CONOCIDOS
@@ -108,7 +108,6 @@ REM    Obtiene las rutas solo de los paquetes que son fundamentales para el DLC/
 REM    (No requiere que el paquete exista, el comando solo devolvera el path si lo encuentra).
 REM --------------------------------------------------------------------------------------
 echo TRUSTONIC - DLC - PACKAGE PATH: >> "%LOG%"
-adb shell pm path com.android.carrierconfig >> "%LOG%"
 adb shell pm path com.google.android.devicelockcontroller >> "%LOG%"
 adb shell pm path com.google.android.overlay.devicelockcontroller >> "%LOG%"
 adb shell pm path com.trustonic.telecoms.standard.dlc >> "%LOG%"
@@ -181,6 +180,7 @@ echo. >> "%LOG%"
 echo CARRIER CERTIFICATES 1913-T: >> "%LOG%"
 adb shell dumpsys carrier_config | findstr /I "carrier_certificate_string_array" >> "%LOG%"
 echo. >> "%LOG%"
+
 echo PATH CARRIERCONFIG >> "%LOG%"
 adb shell pm list packages | findstr /I "carrierconfig" >> "%LOG%"
 adb shell pm path com.android.carrierconfig >> "%LOG%"
