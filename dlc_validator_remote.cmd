@@ -61,8 +61,8 @@ echo. >> "%LOG%"
 echo Nota: SDK 34 corresponde a Android 14, oficialmente requerido para DLC v2. >> "%LOG%"
 echo Solucion: Si el SDK es inferior a 34, el fabricante de equipos originales debe actualizar la ROM a Android 14 o superior. >> "%LOG%"
 echo. >> "%LOG%"
-echo Nota: ro.build.type Normalmente debería ser «user» en los dispositivos de produccion. >> "%LOG%"
-echo Solucion: Si el valor es «eng» o «userdebug», es solo para uso no comercial en laboratorio. >> "%LOG%"
+echo Nota: ro.build.type Normalmente deberia ser (user) en los dispositivos de produccion. >> "%LOG%"
+echo Solucion: Si el valor es (eng) o (userdebug), es solo para uso no comercial en laboratorio. >> "%LOG%"
 echo. >> "%LOG%"
 echo.
 echo ========================================================================================= >> "%LOG%"
@@ -100,7 +100,7 @@ echo [3] DLC PACKAGES / TRUSTONIC
 echo [3] DLC PACKAGES / TRUSTONIC >> "%LOG%"
 echo. >> "%LOG%"
 echo TRUSTONIC STANDARD DLC PACKAGES LIST >> "%LOG%"
-adb shell pm list packages | findstr /I "dlc devicelock trustonic standard telecoms telcelam teeservice tee" >> "%LOG%"
+adb shell pm list packages | findstr /I "dlc devicelock trustonic standard telecoms teeservice" >> "%LOG%"
 echo. >> "%LOG%"
 REM --------------------------------------------------------------------------------------
 REM 2. OBTENCION DE RUTAS (PATHS) DE PAQUETES CRITICOS Y CONOCIDOS
@@ -116,11 +116,15 @@ adb shell pm path com.telcelam.lockscreen >> "%LOG%"
 adb shell pm path com.trustonic.telecoms.standard.dlc >> "%LOG%"
 adb shell pm path com.trustonic.teeservice >> "%LOG%"
 
-
 echo. >> "%LOG%"
-echo Nota: Esta seccion verifica si el fabricante integro correctamente el cliente DLC, Si no aparecen paquetes de Trustonic/DLC, el cliente no esta instalado como aplicacion de sistema. >> "%LOG%"
+echo DEVICELOCK APEX MODULES >> "%LOG%"
+adb shell pm list packages -f --apex-only --show-versioncode | findstr /I "devicelock dlc trustonic" >> "%LOG%"
 echo. >> "%LOG%"
-echo Solucion: El OEM debe integrar el APK de DLC como aplicacion de sistema segun la guia de integracion de Trustonic. >> "%LOG%"
+echo Nota: Esta seccion valida la correcta integracion de DLC por parte del OEM, tanto a nivel de aplicacion de sistema (APK) como modulos de sistema (APEX). >> "%LOG%"
+echo       Si no se detectan paquetes Trustonic/DLC, el cliente DLC no esto instalado como aplicacion de sistema. >> "%LOG%"
+echo       Si no hay salida en la lista de modulos APEX, significa que no existen componentes DLC integrados como APEX en el dispositivo. >> "%LOG%"
+echo. >> "%LOG%"
+echo Solucion: El OEM debe integrar DLC conforme a la guia de Trustonic, como aplicacion de sistema (APK) o como modulo APEX, asegurando su presencia en las rutas de sistema correspondientes. >> "%LOG%"
 echo           /system/priv-app/ - /system_ext/priv-app/ - /apex/com.android.devicelock/ >> "%LOG%"
 echo. >> "%LOG%"
 echo.
@@ -133,9 +137,9 @@ echo [4] DLC SERVICES IN ACTIVITY MANAGER
 echo [4] DLC SERVICES IN ACTIVITY MANAGER >> "%LOG%"
 echo. >> "%LOG%"
 echo DLC SERVICE STATUS >> "%LOG%"
-adb shell dumpsys activity services | findstr /I "dlc devicelock DeviceLockService DeviceLockController" >> "%LOG%"
-REM ojo solo busqueda para evaluar si hubo coincidencias revisar   esto
-adb shell dumpsys activity services | findstr /I "dlc devicelock DeviceLockService DeviceLockController" >nul
+adb shell dumpsys activity services | findstr /I "dlc devicelock DeviceLock DeviceLockController" >> "%LOG%"
+REM Solo busqueda para evaluar si hubo coincidencias
+adb shell dumpsys activity services | findstr /I "dlc devicelock DeviceLock DeviceLockController" >nul
 IF ERRORLEVEL 1 (
 	echo [ADVERTENCIA] No se encontraron servicios relacionados con DLC o DeviceLock. >> "%LOG%"
 ) ELSE (
