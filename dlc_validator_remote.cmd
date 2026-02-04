@@ -61,8 +61,8 @@ echo. >> "%LOG%"
 echo Nota: SDK 34 corresponde a Android 14, oficialmente requerido para DLC v2. >> "%LOG%"
 echo Solucion: Si el SDK es inferior a 34, el fabricante de equipos originales debe actualizar la ROM a Android 14 o superior. >> "%LOG%"
 echo. >> "%LOG%"
-echo Nota: ro.build.type Normalmente deberia ser (user) en los dispositivos de produccion. >> "%LOG%"
-echo Solucion: Si el valor es (eng) o (userdebug), es solo para uso no comercial en laboratorio. >> "%LOG%"
+echo Nota: ro.build.type Normalmente deberia ser ((user)) en los dispositivos de produccion. >> "%LOG%"
+echo Solucion: Si el valor es ((eng)) o ((userdebug)), es solo para uso no comercial en laboratorio. >> "%LOG%"
 echo. >> "%LOG%"
 echo.
 echo ========================================================================================= >> "%LOG%"
@@ -140,6 +140,7 @@ echo DLC SERVICE STATUS >> "%LOG%"
 adb shell dumpsys activity services | findstr /I "dlc devicelock DeviceLock DeviceLockController" >> "%LOG%"
 REM Solo busqueda para evaluar si hubo coincidencias
 adb shell dumpsys activity services | findstr /I "dlc devicelock DeviceLock DeviceLockController" >nul
+echo. >> "%LOG%"
 IF ERRORLEVEL 1 (
 	echo [ADVERTENCIA] No se encontraron servicios relacionados con DLC o DeviceLock. >> "%LOG%"
 ) ELSE (
@@ -162,7 +163,7 @@ echo. >> "%LOG%"
 echo FILTRADO DE LLAMADAS DLC Call_Screening: >> "%LOG%"
 adb shell dumpsys carrier_config | findstr /I "call_screening_app" >> "%LOG%"
 echo. >> "%LOG%"
-echo Nota: El parámetro call_screening_app debe apuntar al servicio CallScreeningService de DLC. Este servicio gestiona las llamadas entrantes (IC), permitiendo aplicar políticas en estado de bloqueo por DLC. >> "%LOG%"
+echo Nota: El parametro call_screening_app debe apuntar al servicio CallScreeningService de DLC. Este servicio gestiona las llamadas entrantes (IC), permitiendo aplicar politicas en estado de bloqueo por DLC. >> "%LOG%"
 echo. >> "%LOG%"
 echo Ejemplo esperado: >> "%LOG%"
 echo App y servicio - com.trustonic.telecoms.standard.dlc/com.trustonic.telecoms.entrypoint.carrier.CallScreeningService >> "%LOG%"
@@ -211,15 +212,15 @@ IF ERRORLEVEL 1 (
 REM --- Certificado co.sitic.pp ---
 adb shell dumpsys carrier_config | findstr /I "carrier_certificate_string_array" | findstr /I "co.sitic.pp" >nul
 IF ERRORLEVEL 1 (
-    echo [ADVERTENCIA] Falta certificado de co.sitic.pp (si aplica para AMX) >> "%LOG%"
+    echo [ADVERTENCIA] Falta certificado de co.sitic.pp (si este aplica para AMX) >> "%LOG%"
 ) ELSE (
     echo [OK] Certificado co.sitic.pp encontrado en carrier_certificate_string_array >> "%LOG%"
 )
 
 echo. >> "%LOG%"
-echo Nota: El parámetro carrier_certificate debe contener certificados del carrier y de las apps autorizadas (DLC/DPC/co.sitic.pp). Si el valor es [] o vacio, no hay certificados de carrier configurados. >> "%LOG%"
+echo Nota: El parametro carrier_certificate debe contener certificados del carrier y de las apps autorizadas (DLC/DPC/co.sitic.pp). Si el valor es [] o vacio, no hay certificados de carrier configurados. >> "%LOG%"
 echo. >> "%LOG%"
-echo Solucion: El OEM debe integrar los archivos XML de CarrierConfig correctos (por ejemplo carrier_config_1913.xml) e incluir los certificados SHA1/SHA256 requeridos para DLC y las apps de carrier. >> "%LOG%"
+echo Solucion: El OEM debe integrar los archivos XML de CarrierConfig correctos e incluir los certificados SHA1/SHA256 requeridos para DLC y las apps de carrier. >> "%LOG%"
 echo. >> "%LOG%"
 echo.
 echo ========================================================================================= >> "%LOG%"
@@ -239,7 +240,7 @@ adb shell settings get global adb_enabled >> "%LOG%"
 echo Nota: 1 = depuracion USB activada. >> "%LOG%"
 echo Nota: 0 = depuracion USB desactivada. >> "%LOG%"
 echo. >> "%LOG%"
-echo Solucion: En dispositivos de produccion con MDM/DLC activos, ambos valores deben permanecer en 0 para evitar vectores de ataque por ADB. Si alguno está en 1, debe justificarse unicamente en entornos de prueba controlados. >> "%LOG%"
+echo Solucion: En dispositivos de produccion con MDM/DLC activos, ambos valores deben permanecer en 0 para evitar vectores de ataque por ADB. Si alguno esta en 1, debe justificarse unicamente en entornos de prueba controlados. >> "%LOG%"
 echo. >> "%LOG%"
 echo.
 echo ========================================================================================= >> "%LOG%"
