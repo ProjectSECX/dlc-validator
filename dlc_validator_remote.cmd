@@ -8,9 +8,9 @@ REM InternalName: DLC Validator
 REM Author: Mauricio Gutiérrez
 REM Department: Seguridad / QA / DeviceLock Integration
 REM ProductVersion: 1.0
-REM FileVersion: 7.0.0
+REM FileVersion: 7.1.0
 REM Trademark: TRUSTONIC
-REM Copyright: © 2025 TRUSTONIC – All rights reserved.
+REM Copyright: © 2026 TRUSTONIC – All rights reserved.
 REM Comments: Internal Use Only – Do Not Redistribute.
 REM ExeType: console
 REM Architecture: x64
@@ -112,7 +112,6 @@ adb shell pm path com.google.android.devicelockcontroller >> "%LOG%"
 adb shell pm path com.google.android.overlay.devicelockcontroller >> "%LOG%"
 adb shell pm path com.trustonic.telecoms.standard.dlc >> "%LOG%"
 adb shell pm path com.trustonic.teeservice >> "%LOG%"
-adb shell pm path com.telcelam.lockscreen >> "%LOG%"
 adb shell pm path com.trustonic.telecoms.standard.dlc >> "%LOG%"
 adb shell pm path com.trustonic.teeservice >> "%LOG%"
 
@@ -149,7 +148,7 @@ IF ERRORLEVEL 1 (
 echo. >> "%LOG%"
 echo Nota: Si no se muestra ningun servicio, DLC puede no estar corriendo o no estar registrado en System Server. >> "%LOG%"
 echo. >> "%LOG%"
-echo Solucion: El OEM debe verificar el manifest de DLC, los permisos y la integracion en el arranque del sistema (system_server). >> "%LOG%"
+echo Solucion: El OEM debe verificar el Manifest de DLC, los permisos y la integracion en el arranque del sistema (system_server). >> "%LOG%"
 echo. >> "%LOG%"
 echo.
 
@@ -160,6 +159,28 @@ REM -------------------------------------------------
 echo [5] CARRIERCONFIG - CRITICAL PARAMETERS
 echo [5] CARRIERCONFIG - CRITICAL PARAMETERS >> "%LOG%"
 echo. >> "%LOG%"
+REM --- Propiedades SIM (pueden venir multi-SIM) ---
+for /f "delims=" %%A in ('adb shell getprop gsm.sim.state') do set "SIM_STATE_RAW=%%A"
+for /f "delims=" %%A in ('adb shell getprop gsm.sim.operator.numeric') do set "SIM_MCCMNC_RAW=%%A"
+for /f "delims=" %%A in ('adb shell getprop gsm.sim.operator.iso-country') do set "SIM_ISO_RAW=%%A"
+
+REM --- Tomar primer slot si hay multi-SIM ---
+for /f "tokens=1 delims=," %%A in ("%SIM_STATE_RAW%") do set "SIM_STATE=%%A"
+for /f "tokens=1 delims=," %%A in ("%SIM_MCCMNC_RAW%") do set "SIM_MCCMNC=%%A"
+for /f "tokens=1 delims=," %%A in ("%SIM_ISO_RAW%") do set "SIM_ISO=%%A"
+
+REM --- Valores por defecto ---
+if "%SIM_STATE%"=="" set "SIM_STATE=N/A"
+if "%SIM_MCCMNC%"=="" set "SIM_MCCMNC=N/A"
+if "%SIM_ISO%"=="" set "SIM_ISO=N/A"
+
+echo [INFO] SIM_STATE=%SIM_STATE% >> "%LOG%"
+echo [INFO] SIM_OPERATOR_(MCCMNC)=%SIM_MCCMNC% >> "%LOG%"
+echo [INFO] ISO-COUNTRY=%SIM_ISO% >> "%LOG%"
+echo Nota: Algunos dispositivos activan parametros de CarrierConfig (ej. CALL SCREEN) solo con SIM insertada. MCC/MNC/ISO ayudan a ejecutar variaciones por pais y carrier. >> "%LOG%"
+echo. >> "%LOG%"
+echo. >> "%LOG%"
+
 echo FILTRADO DE LLAMADAS DLC Call_Screening: >> "%LOG%"
 adb shell dumpsys carrier_config | findstr /I "call_screening_app" >> "%LOG%"
 echo. >> "%LOG%"
@@ -169,6 +190,7 @@ echo Ejemplo esperado: >> "%LOG%"
 echo App y servicio - com.trustonic.telecoms.standard.dlc/com.trustonic.telecoms.entrypoint.carrier.CallScreeningService >> "%LOG%"
 echo. >> "%LOG%"
 echo Solucion: Si el valor esta vacio o no contiene "trustonic", el OEM debe actualizar los XML de CarrierConfig para asignar correctamente el componente de CallScreeningService. >> "%LOG%"
+echo. >> "%LOG%"
 echo. >> "%LOG%"
 
 echo CALL REDIRECTION CONFIG: >> "%LOG%"
@@ -181,8 +203,9 @@ echo App y servicio - com.trustonic.telecoms.standard.dlc/com.trustonic.telecoms
 echo. >> "%LOG%"
 echo Solucion: Si el valor es "null", vacio o no contiene "trustonic", el OEM debe configurar el componente CallRedirectionService en los XML de CarrierConfig. >> "%LOG%"
 echo. >> "%LOG%"
+echo. >> "%LOG%"
 
-echo CARRIER CERTIFICATES 1913-T: >> "%LOG%"
+echo CARRIER CERTIFICATES: >> "%LOG%"
 adb shell dumpsys carrier_config | findstr /I "carrier_certificate_string_array" >> "%LOG%"
 echo. >> "%LOG%"
 
