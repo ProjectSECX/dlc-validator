@@ -6,7 +6,7 @@ REM Author: Mauricio Gutierrez
 REM Department: Security / QA / DeviceLock Integration
 REM Output: DLC_Validator_Report.txt
 REM Trademark: TRUSTONIC
-REM Copyright: � 2026 TRUSTONIC � All rights reserved.
+REM Copyright: 2026 TRUSTONIC All rights reserved.
 REM Requiere: Windows 10/11 + PowerShell + ADB en el PATH.
 REM ============================================================
 
@@ -36,7 +36,7 @@ adb devices > "%TMP%" 2>&1
 findstr /R /C:"device$" "%TMP%" >nul
 
 if errorlevel 1 (
-    call :REVIEW "No se detect� ning�n dispositivo autorizado por ADB."
+    call :REVIEW "No se detecto ningun dispositivo autorizado por ADB."
     echo Recomendacion: Conectar el dispositivo por USB, habilitar Depuracion USB y aceptar la autorizacion ADB en el telefono. >> "%SUMMARY%"
     echo. >> "%SUMMARY%"
     goto END_REPORT
@@ -77,7 +77,7 @@ if "%SDK_VERSION%"=="" (
 )
 
 if /I "%BUILD_TYPE%"=="user" (
-    call :OK "Software de producci�n detectado (USER)."
+    call :OK "Software de produccion detectado (USER)."
 ) else (
     call :REVIEW "Tipo de compilacion no corresponde a USER. Valor detectado: %BUILD_TYPE%"
     echo Recomendacion: Para validaciones de produccion se recomienda utilizar software tipo USER. Valores como userdebug o eng corresponden normalmente a entornos de laboratorio o desarrollo. >> "%SUMMARY%"
@@ -125,7 +125,7 @@ adb shell pm list packages 2>nul | findstr /I "dlc devicelock trustonic carrier 
 
 if errorlevel 1 (
     call :REVIEW "No se detectaron paquetes relacionados con DLC, DeviceLock o Trustonic."
-    echo Recomendacion: Validar que el OEM haya integrado los componentes DLC conforme a la gu�a de integracion correspondiente. >> "%SUMMARY%"
+    echo Recomendacion: Validar que el OEM haya integrado los componentes DLC conforme a la guia de integracion correspondiente. >> "%SUMMARY%"
 ) else (
     call :OK "Paquetes relacionados con DLC / DeviceLock detectados."
 )
@@ -149,7 +149,7 @@ call :SECTION "[4] SERVICIOS DLC"
 adb shell dumpsys activity services 2>nul | findstr /I "dlc devicelock DeviceLockService DeviceLockController" > "%TMP%"
 
 if errorlevel 1 (
-    call :INFO "No se detectaron servicios DLC visibles mediante diagn�stico Android."
+    call :INFO "No se detectaron servicios DLC visibles mediante diagnostico Android."
 echo. >> "%SUMMARY%"
     echo Nota: Algunos fabricantes restringen o no exponen esta informacion mediante Activity Manager. Esto no representa necesariamente un problema de integracion DLC y no impide continuar con el proceso de validacion. >> "%SUMMARY%"
 ) else (
@@ -186,7 +186,7 @@ if errorlevel 1 (
     call :OK "SIM detectada o informacion SIM disponible."
 ) else (
     call :INFO "SIM no detectada o informacion SIM no disponible."
-    REM echo Nota: Algunos fabricantes activan par�metros CarrierConfig �nicamente cuando existe una SIM v�lida o una personalizaci�n asociada al operador. >> "%SUMMARY%"
+    REM echo Nota: Algunos fabricantes activan parametros CarrierConfig unicamente cuando existe una SIM valida o una personalizacion asociada al operador. >> "%SUMMARY%"
 )
 
 REM echo. >> "%SUMMARY%"
@@ -195,7 +195,7 @@ findstr /I "trustonic" "%TMP%" >nul
 
 if errorlevel 1 (
     call :INFO "CALL SCREENING no detectado o no asociado a DLC."
-    REM echo Nota: En dispositivos Open Market o implementaciones que no utilizan gesti�n de llamadas, este par�metro puede no estar presente y no debe considerarse un bloqueo para continuar la validaci�n. >> "%SUMMARY%"
+    REM echo Nota: En dispositivos Open Market o implementaciones que no utilizan gestion de llamadas, este parametro puede no estar presente y no debe considerarse un bloqueo para continuar la validacion. >> "%SUMMARY%"
 ) else (
     call :OK "CALL SCREENING asociado a DLC detectado."
 )
@@ -206,7 +206,7 @@ findstr /I "trustonic" "%TMP%" >nul
 
 if errorlevel 1 (
     call :INFO "CALL REDIRECTION no detectado o no asociado a DLC."
-    REM echo Nota: En dispositivos Open Market o implementaciones que no utilizan gesti�n de llamadas, este par�metro puede no estar presente y no debe considerarse un bloqueo para continuar la validaci�n. >> "%SUMMARY%"
+    REM echo Nota: En dispositivos Open Market o implementaciones que no utilizan gestion de llamadas, este parametro puede no estar presente y no debe considerarse un bloqueo para continuar la validacion. >> "%SUMMARY%"
 ) else (
     call :OK "CALL REDIRECTION asociado a DLC detectado."
 )
@@ -237,7 +237,7 @@ if errorlevel 1 (
 
 echo. >> "%SUMMARY%"
 echo Nota CarrierConfig: >> "%SUMMARY%"
-echo Algunas validaciones dependen de la implementacion del fabricante, la presencia de SIM activa y la configuracion espec�fica del operador. En dispositivos Open Market o configuraciones que no utilizan funcionalidades avanzadas de CarrierConfig, algunos parametros pueden no estar disponibles. >> "%SUMMARY%"
+echo Algunas validaciones dependen de la implementacion del fabricante, la presencia de SIM activa y la configuracion especifica del operador. En dispositivos Open Market o configuraciones que no utilizan funcionalidades avanzadas de CarrierConfig, algunos parametros pueden no estar disponibles. >> "%SUMMARY%"
 echo. >> "%SUMMARY%"
 
 REM ============================================================
@@ -271,7 +271,7 @@ if "%DEV_MODE%"=="1" if "%ADB_ENABLED%"=="1" (
 )
 
 REM echo. >> "%SUMMARY%"
-REM echo Nota: En dispositivos comerciales destinados a producci�n, normalmente se espera que Opciones de desarrollador y Depuraci�n USB permanezcan deshabilitadas. Durante pruebas de laboratorio o validaci�n t�cnica pueden estar habilitadas de forma controlada. >> "%SUMMARY%"
+REM echo Nota: En dispositivos comerciales destinados a produccion, normalmente se espera que Opciones de desarrollador y Depuracion USB permanezcan deshabilitadas. Durante pruebas de laboratorio o validacion tecnica pueden estar habilitadas de forma controlada. >> "%SUMMARY%"
 echo. >> "%SUMMARY%"
 
 REM ============================================================
@@ -307,7 +307,7 @@ if %REVIEW_COUNT% GTR 0 (
     echo Recomendacion general: Revisar los puntos marcados como [REVIEW] antes de considerar el dispositivo listo para validacion final. >> "%SUMMARY%"
 ) else (
     echo Estado general: VALIDACION COMPLETADA >> "%SUMMARY%"
-    echo Resultado: No se identificaron puntos cr�ticos para revision en el resumen generado. >> "%SUMMARY%"
+    echo Resultado: No se identificaron puntos criticos para revision en el resumen generado. >> "%SUMMARY%"
 )
 
 echo. >> "%SUMMARY%"
@@ -330,9 +330,9 @@ REM ============================================================
 :HEADER
 echo ============================================================ >> "%SUMMARY%"
 echo DLC VALIDATION REPORT >> "%SUMMARY%"
-echo Versi�n de herramienta: 8.0.0 >> "%SUMMARY%"
+echo Version de herramienta: 8.0.0 >> "%SUMMARY%"
 echo Formato de reporte: Summary v1.0 >> "%SUMMARY%"
-echo Fecha de ejecuci�n: %DATE% >> "%SUMMARY%"
+echo Fecha de ejecucion: %DATE% >> "%SUMMARY%"
 echo ============================================================ >> "%SUMMARY%"
 echo. >> "%SUMMARY%"
 goto :eof
