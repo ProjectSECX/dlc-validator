@@ -64,7 +64,7 @@ echo SDK Version: %SDK_VERSION% >> "%SUMMARY%"
 echo Tipo de compilación: %BUILD_TYPE% >> "%SUMMARY%"
 echo. >> "%SUMMARY%"
 
-if "%SDK_VERSION%"=="" (
+if "%SDK_VERSION%"==" (
     call :REVIEW "No fue posible obtener el SDK Version del dispositivo."
     echo Recomendación: Validar manualmente que el dispositivo use Android 14 / SDK 34 o superior. >> "%SUMMARY%"
 ) else (
@@ -281,7 +281,7 @@ call :SECTION "[7] INFORMACIÓN COMPLEMENTARIA DE CARRIER"
 
 for /f "delims=" %%A in ('adb shell getprop persist.radio.carrier_id 2^>nul') do set "CARRIER_ID=%%A"
 
-if "%CARRIER_ID%"=="" (
+if "%CARRIER_ID%"==" (
     call :INFO "Carrier ID no disponible."
     echo Nota: Algunos fabricantes no exponen esta información. La ausencia de Carrier ID no debe interpretarse como una falla de integración DLC. >> "%SUMMARY%"
 ) else (
