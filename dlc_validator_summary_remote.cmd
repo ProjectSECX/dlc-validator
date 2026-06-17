@@ -77,7 +77,7 @@ if "%SDK_VERSION%"=="" (
 )
 
 if /I "%BUILD_TYPE%"=="user" (
-    call :OK "Software de produccion detectado (USER)."
+    call :OK "Software de produccion detectado - USER."
 ) else (
     call :REVIEW "Tipo de compilacion no corresponde a USER. Valor detectado: %BUILD_TYPE%"
     echo Recomendacion: Para validaciones de produccion se recomienda utilizar software tipo USER. Valores como userdebug o eng corresponden normalmente a entornos de laboratorio o desarrollo. >> "%SUMMARY%"
@@ -249,30 +249,33 @@ call :SECTION "[6] MODO DESARROLLADOR Y DEPURACION USB"
 for /f "delims=" %%A in ('adb shell settings get global development_settings_enabled 2^>nul') do set "DEV_MODE=%%A"
 for /f "delims=" %%A in ('adb shell settings get global adb_enabled 2^>nul') do set "ADB_ENABLED=%%A"
 
-if "%DEV_MODE%"=="" set "DEV_MODE=N/A"
-if "%ADB_ENABLED%"=="" set "ADB_ENABLED=N/A"
-
-echo Estado detectado: >> "%SUMMARY%"
-echo Opciones de desarrollador: %DEV_MODE% >> "%SUMMARY%"
-echo Depuracion USB: %ADB_ENABLED% >> "%SUMMARY%"
-echo. >> "%SUMMARY%"
-
 set "DEV_ADB_STATE=%DEV_MODE%_%ADB_ENABLED%"
 
 if "%DEV_ADB_STATE%"=="1_1" (
     call :INFO "Opciones de desarrollador y Depuracion USB habilitadas. Esto es esperado para ejecutar la herramienta en un entorno controlado."
-) else if "%DEV_ADB_STATE%"=="0_0" (
-    call :OK "Opciones de desarrollador y Depuracion USB deshabilitadas. Estado esperado para dispositivos comerciales."
-) else if "%DEV_ADB_STATE%"=="1_0" (
-    call :INFO "Opciones de desarrollador habilitadas, pero Depuracion USB deshabilitada."
-    echo Nota: Para ejecutar DLC_Validator se requiere Depuracion USB habilitada y autorizacion ADB. >> "%SUMMARY%"
-) else if "%DEV_ADB_STATE%"=="0_1" (
-    call :INFO "Depuracion USB habilitada con Opciones de desarrollador no reportadas como activas."
-    echo Nota: Algunos fabricantes pueden reportar estos valores de forma diferente. Validar el estado directamente en el dispositivo si es necesario. >> "%SUMMARY%"
-) else (
-    call :INFO "Estado de Opciones de desarrollador o Depuracion USB no disponible. El fabricante puede no reportar estos valores de forma estandar."
+    goto DEVADB_DONE
 )
 
+if "%DEV_ADB_STATE%"=="0_0" (
+    call :OK "Opciones de desarrollador y Depuracion USB deshabilitadas. Estado esperado para dispositivos comerciales."
+    goto DEVADB_DONE
+)
+
+if "%DEV_ADB_STATE%"=="1_0" (
+    call :INFO "Opciones de desarrollador habilitadas, pero Depuracion USB deshabilitada."
+    echo Nota: Para ejecutar DLC_Validator se requiere Depuracion USB habilitada y autorizacion ADB. >> "%SUMMARY%"
+    goto DEVADB_DONE
+)
+
+if "%DEV_ADB_STATE%"=="0_1" (
+    call :INFO "Depuracion USB habilitada con Opciones de desarrollador no reportadas como activas."
+    echo Nota: Algunos fabricantes pueden reportar estos valores de forma diferente. Validar el estado directamente en el dispositivo si es necesario. >> "%SUMMARY%"
+    goto DEVADB_DONE
+)
+
+call :INFO "Estado de Opciones de desarrollador o Depuracion USB no disponible. El fabricante puede no reportar estos valores de forma estandar."
+
+:DEVADB_DONE
 echo. >> "%SUMMARY%"
 
 REM ============================================================
@@ -354,6 +357,7 @@ goto :eof
 set /a INFO_COUNT+=1
 echo [INFO] %~1 >> "%SUMMARY%"
 goto :eof
+
 :REVIEW
 set /a REVIEW_COUNT+=1
 echo [REVIEW] %~1 >> "%SUMMARY%"
