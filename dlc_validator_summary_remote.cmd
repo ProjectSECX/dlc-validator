@@ -98,7 +98,7 @@ if /I "%AVB_STATE%"=="green" (
     call :OK "GREEN corresponde al estado esperado para dispositivos de produccion."
 ) else (
     call :REVIEW "Android Verified Boot no se encuentra en GREEN. Valor detectado: %AVB_STATE%"
-    echo Recomendaci�n: El OEM debe entregar equipos comerciales con Verified Boot en estado GREEN. >> "%SUMMARY%"
+    echo Recomendacion: El OEM debe entregar equipos comerciales con Verified Boot en estado GREEN. >> "%SUMMARY%"
 )
 
 if "%BOOT_LOCKED%"=="1" (
@@ -111,7 +111,7 @@ if "%BOOT_LOCKED%"=="1" (
 echo. >> "%SUMMARY%"
 echo Referencia AVB: >> "%SUMMARY%"
 echo GREEN  - Software OEM verificado. Estado esperado en produccion. >> "%SUMMARY%"
-echo YELLOW - Imagen v�lida firmada con clave alternativa. >> "%SUMMARY%"
+echo YELLOW - Imagen valida firmada con clave alternativa. >> "%SUMMARY%"
 echo ORANGE - Bootloader desbloqueado. Sistema no confiable para produccion. >> "%SUMMARY%"
 echo RED    - Imagen invalida o corrupta. >> "%SUMMARY%"
 echo. >> "%SUMMARY%"
@@ -161,6 +161,7 @@ echo. >> "%SUMMARY%"
 REM ============================================================
 REM 5. CARRIERCONFIG
 REM ============================================================
+call :SECTION "[5] CARRIERCONFIG"
 REM --- Propiedades SIM (pueden venir multi-SIM) ---
 for /f "delims=" %%A in ('adb shell getprop gsm.sim.state 2^>nul') do set "SIM_STATE_RAW=%%A"
 for /f "delims=" %%A in ('adb shell getprop gsm.sim.operator.numeric 2^>nul') do set "SIM_MCCMNC_RAW=%%A"
@@ -178,7 +179,7 @@ if "%ISO_COUNTRY%"=="" set "ISO_COUNTRY=N/A"
 
 echo Estado SIM: %SIM_STATE% >> "%SUMMARY%"
 echo Operador SIM MCC/MNC: %SIM_OPERATOR% >> "%SUMMARY%"
-echo Pa�s ISO: %ISO_COUNTRY% >> "%SUMMARY%"
+echo Pais ISO: %ISO_COUNTRY% >> "%SUMMARY%"
 echo. >> "%SUMMARY%"
 
 echo %SIM_STATE% | findstr /I "ABSENT NOT_READY N/A" >nul
@@ -256,22 +257,22 @@ echo Opciones de desarrollador: %DEV_MODE% >> "%SUMMARY%"
 echo Depuracion USB: %ADB_ENABLED% >> "%SUMMARY%"
 echo. >> "%SUMMARY%"
 
-if "%DEV_MODE%"=="1" if "%ADB_ENABLED%"=="1" (
+set "DEV_ADB_STATE=%DEV_MODE%_%ADB_ENABLED%"
+
+if "%DEV_ADB_STATE%"=="1_1" (
     call :INFO "Opciones de desarrollador y Depuracion USB habilitadas. Esto es esperado para ejecutar la herramienta en un entorno controlado."
-) else if "%DEV_MODE%"=="0" if "%ADB_ENABLED%"=="0" (
-    call :OK "Opciones de desarrollador y Depuraci�n USB deshabilitadas. Estado esperado para dispositivos comerciales."
-) else if "%DEV_MODE%"=="1" if "%ADB_ENABLED%"=="0" (
+) else if "%DEV_ADB_STATE%"=="0_0" (
+    call :OK "Opciones de desarrollador y Depuracion USB deshabilitadas. Estado esperado para dispositivos comerciales."
+) else if "%DEV_ADB_STATE%"=="1_0" (
     call :INFO "Opciones de desarrollador habilitadas, pero Depuracion USB deshabilitada."
     echo Nota: Para ejecutar DLC_Validator se requiere Depuracion USB habilitada y autorizacion ADB. >> "%SUMMARY%"
-) else if "%DEV_MODE%"=="0" if "%ADB_ENABLED%"=="1" (
+) else if "%DEV_ADB_STATE%"=="0_1" (
     call :INFO "Depuracion USB habilitada con Opciones de desarrollador no reportadas como activas."
     echo Nota: Algunos fabricantes pueden reportar estos valores de forma diferente. Validar el estado directamente en el dispositivo si es necesario. >> "%SUMMARY%"
 ) else (
     call :INFO "Estado de Opciones de desarrollador o Depuracion USB no disponible. El fabricante puede no reportar estos valores de forma estandar."
 )
 
-REM echo. >> "%SUMMARY%"
-REM echo Nota: En dispositivos comerciales destinados a produccion, normalmente se espera que Opciones de desarrollador y Depuracion USB permanezcan deshabilitadas. Durante pruebas de laboratorio o validacion tecnica pueden estar habilitadas de forma controlada. >> "%SUMMARY%"
 echo. >> "%SUMMARY%"
 
 REM ============================================================
@@ -353,7 +354,6 @@ goto :eof
 set /a INFO_COUNT+=1
 echo [INFO] %~1 >> "%SUMMARY%"
 goto :eof
-
 :REVIEW
 set /a REVIEW_COUNT+=1
 echo [REVIEW] %~1 >> "%SUMMARY%"
