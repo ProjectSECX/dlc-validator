@@ -5,9 +5,6 @@ REM InternalName: DLC_Validator_Summary
 REM Author: Mauricio Gutierrez
 REM Department: Security / QA / DeviceLock Integration
 REM Output: DLC_Validator_Report.txt
-REM Trademark: TRUSTONIC
-REM Copyright: 2026 TRUSTONIC All rights reserved.
-REM Requiere: Windows 10/11 + PowerShell + ADB en el PATH.
 REM ============================================================
 
 chcp 65001 >nul
@@ -17,14 +14,20 @@ setlocal EnableDelayedExpansion
 set "SUMMARY=DLC_Validator_Report.txt"
 set "TMP=%TEMP%\dlc_validator_summary_tmp.txt"
 
-set OK_COUNT=0
-set INFO_COUNT=0
-set REVIEW_COUNT=0
+set /a OK_COUNT=0
+set /a INFO_COUNT=0
+set /a REVIEW_COUNT=0
 
 if exist "%SUMMARY%" del "%SUMMARY%" >nul 2>&1
 if exist "%TMP%" del "%TMP%" >nul 2>&1
 
-call :HEADER
+echo ============================================================ >> "%SUMMARY%"
+echo DLC VALIDATION REPORT >> "%SUMMARY%"
+echo Version de herramienta: 8.0.0 >> "%SUMMARY%"
+echo Formato de reporte: Summary v1.0 >> "%SUMMARY%"
+echo Fecha de ejecucion: %DATE% >> "%SUMMARY%"
+echo ============================================================ >> "%SUMMARY%"
+echo. >> "%SUMMARY%"
 
 REM ============================================================
 REM 0. CONNECTED DEVICE
@@ -36,26 +39,36 @@ adb devices > "%TMP%" 2>&1
 findstr /R /C:"device$" "%TMP%" >nul
 
 if errorlevel 1 (
-    call :REVIEW "No se detecto ningun dispositivo autorizado por ADB."
+    echo [REVIEW] No se detecto ningun dispositivo autorizado por ADB. >> "%SUMMARY%"
+    set /a REVIEW_COUNT+=1
     echo Recomendacion: Conectar el dispositivo por USB, habilitar Depuracion USB y aceptar la autorizacion ADB en el telefono. >> "%SUMMARY%"
     echo. >> "%SUMMARY%"
-    goto END_REPORT
-) else (
-    call :OK "Dispositivo detectado correctamente mediante ADB."
+    goto FINAL_REPORT
 )
 
+echo [OK] Dispositivo detectado correctamente mediante ADB. >> "%SUMMARY%"
+set /a OK_COUNT+=1
 echo. >> "%SUMMARY%"
 
 REM ============================================================
 REM 1. DEVICE INFORMATION
 REM ============================================================
-call :SECTION "[1] INFORMACION DEL DISPOSITIVO"
+echo ============================================================ >> "%SUMMARY%"
+echo [1] INFORMACION DEL DISPOSITIVO >> "%SUMMARY%"
+echo ============================================================ >> "%SUMMARY%"
+echo. >> "%SUMMARY%"
 
 for /f "delims=" %%A in ('adb shell getprop ro.product.vendor.manufacturer 2^>nul') do set "MANUFACTURER=%%A"
 for /f "delims=" %%A in ('adb shell getprop ro.product.vendor.model 2^>nul') do set "MODEL=%%A"
 for /f "delims=" %%A in ('adb shell getprop ro.build.version.release 2^>nul') do set "ANDROID_VERSION=%%A"
 for /f "delims=" %%A in ('adb shell getprop ro.build.version.sdk 2^>nul') do set "SDK_VERSION=%%A"
 for /f "delims=" %%A in ('adb shell getprop ro.build.type 2^>nul') do set "BUILD_TYPE=%%A"
+
+if "%MANUFACTURER%"=="" set "MANUFACTURER=N/A"
+if "%MODEL%"=="" set "MODEL=N/A"
+if "%ANDROID_VERSION%"=="" set "ANDROID_VERSION=N/A"
+if "%SDK_VERSION%"=="" set "SDK_VERSION=N/A"
+if "%BUILD_TYPE%"=="" set "BUILD_TYPE=N/A"
 
 echo Fabricante: %MANUFACTURER% >> "%SUMMARY%"
 echo Modelo: %MODEL% >> "%SUMMARY%"
@@ -64,22 +77,27 @@ echo SDK Version: %SDK_VERSION% >> "%SUMMARY%"
 echo Tipo de compilacion: %BUILD_TYPE% >> "%SUMMARY%"
 echo. >> "%SUMMARY%"
 
-if "%SDK_VERSION%"=="" (
-    call :REVIEW "No fue posible obtener el SDK Version del dispositivo."
+if "%SDK_VERSION%"=="N/A" (
+    echo [REVIEW] No fue posible obtener el SDK Version del dispositivo. >> "%SUMMARY%"
+    set /a REVIEW_COUNT+=1
     echo Recomendacion: Validar manualmente que el dispositivo use Android 14 / SDK 34 o superior. >> "%SUMMARY%"
 ) else (
     if %SDK_VERSION% GEQ 34 (
-        call :OK "SDK compatible para DLC v2. Android 14 / SDK 34 o superior."
+        echo [OK] SDK compatible para DLC v2. Android 14 / SDK 34 o superior. >> "%SUMMARY%"
+        set /a OK_COUNT+=1
     ) else (
-        call :REVIEW "SDK inferior al recomendado para DLC v2."
+        echo [REVIEW] SDK inferior al recomendado para DLC v2. >> "%SUMMARY%"
+        set /a REVIEW_COUNT+=1
         echo Recomendacion: El dispositivo debe utilizar Android 14 / SDK 34 o superior para validaciones DLC v2. >> "%SUMMARY%"
     )
 )
 
 if /I "%BUILD_TYPE%"=="user" (
-    call :OK "Software de produccion detectado - USER."
+    echo [OK] Software de produccion detectado - USER. >> "%SUMMARY%"
+    set /a OK_COUNT+=1
 ) else (
-    call :REVIEW "Tipo de compilacion no corresponde a USER. Valor detectado: %BUILD_TYPE%"
+    echo [REVIEW] Tipo de compilacion no corresponde a USER. Valor detectado: %BUILD_TYPE% >> "%SUMMARY%"
+    set /a REVIEW_COUNT+=1
     echo Recomendacion: Para validaciones de produccion se recomienda utilizar software tipo USER. Valores como userdebug o eng corresponden normalmente a entornos de laboratorio o desarrollo. >> "%SUMMARY%"
 )
 
@@ -88,23 +106,33 @@ echo. >> "%SUMMARY%"
 REM ============================================================
 REM 2. VERIFIED BOOT / BOOTLOADER
 REM ============================================================
-call :SECTION "[2] ESTADO DE SEGURIDAD ANDROID"
+echo ============================================================ >> "%SUMMARY%"
+echo [2] ESTADO DE SEGURIDAD ANDROID >> "%SUMMARY%"
+echo ============================================================ >> "%SUMMARY%"
+echo. >> "%SUMMARY%"
 
 for /f "delims=" %%A in ('adb shell getprop ro.boot.verifiedbootstate 2^>nul') do set "AVB_STATE=%%A"
 for /f "delims=" %%A in ('adb shell getprop ro.boot.flash.locked 2^>nul') do set "BOOT_LOCKED=%%A"
 
+if "%AVB_STATE%"=="" set "AVB_STATE=N/A"
+if "%BOOT_LOCKED%"=="" set "BOOT_LOCKED=N/A"
+
 if /I "%AVB_STATE%"=="green" (
-    call :OK "Android Verified Boot: GREEN."
-    call :OK "GREEN corresponde al estado esperado para dispositivos de produccion."
+    echo [OK] Android Verified Boot: GREEN. >> "%SUMMARY%"
+    echo [OK] GREEN corresponde al estado esperado para dispositivos de produccion. >> "%SUMMARY%"
+    set /a OK_COUNT+=2
 ) else (
-    call :REVIEW "Android Verified Boot no se encuentra en GREEN. Valor detectado: %AVB_STATE%"
+    echo [REVIEW] Android Verified Boot no se encuentra en GREEN. Valor detectado: %AVB_STATE% >> "%SUMMARY%"
+    set /a REVIEW_COUNT+=1
     echo Recomendacion: El OEM debe entregar equipos comerciales con Verified Boot en estado GREEN. >> "%SUMMARY%"
 )
 
 if "%BOOT_LOCKED%"=="1" (
-    call :OK "Bootloader: LOCKED estado esperado para dispositivos de produccion."
+    echo [OK] Bootloader: LOCKED estado esperado para dispositivos de produccion. >> "%SUMMARY%"
+    set /a OK_COUNT+=1
 ) else (
-    call :REVIEW "Bootloader no se encuentra bloqueado. Valor detectado: %BOOT_LOCKED%"
+    echo [REVIEW] Bootloader no se encuentra bloqueado. Valor detectado: %BOOT_LOCKED% >> "%SUMMARY%"
+    set /a REVIEW_COUNT+=1
     echo Recomendacion: El bootloader debe estar bloqueado antes de distribucion o validacion comercial. >> "%SUMMARY%"
 )
 
@@ -119,24 +147,31 @@ echo. >> "%SUMMARY%"
 REM ============================================================
 REM 3. DLC PACKAGES / TRUSTONIC
 REM ============================================================
-call :SECTION "[3] INTEGRACION DLC / TRUSTONIC"
+echo ============================================================ >> "%SUMMARY%"
+echo [3] INTEGRACION DLC / TRUSTONIC >> "%SUMMARY%"
+echo ============================================================ >> "%SUMMARY%"
+echo. >> "%SUMMARY%"
 
 adb shell pm list packages 2>nul | findstr /I "dlc devicelock trustonic carrier telecoms telcelam teeservice tee" > "%TMP%"
 
 if errorlevel 1 (
-    call :REVIEW "No se detectaron paquetes relacionados con DLC, DeviceLock o Trustonic."
+    echo [REVIEW] No se detectaron paquetes relacionados con DLC, DeviceLock o Trustonic. >> "%SUMMARY%"
+    set /a REVIEW_COUNT+=1
     echo Recomendacion: Validar que el OEM haya integrado los componentes DLC conforme a la guia de integracion correspondiente. >> "%SUMMARY%"
 ) else (
-    call :OK "Paquetes relacionados con DLC / DeviceLock detectados."
+    echo [OK] Paquetes relacionados con DLC / DeviceLock detectados. >> "%SUMMARY%"
+    set /a OK_COUNT+=1
 )
 
 adb shell pm list packages -f 2>nul | findstr /I "devicelock.apex com.android.devicelock" > "%TMP%"
 
 if errorlevel 1 (
-    call :INFO "No se detecto modulo DeviceLock APEX."
+    echo [INFO] No se detecto modulo DeviceLock APEX. >> "%SUMMARY%"
+    set /a INFO_COUNT+=1
     echo Nota: Algunos dispositivos pueden integrar componentes DLC como APK de sistema y no necesariamente como modulo APEX. >> "%SUMMARY%"
 ) else (
-    call :OK "Modulo DeviceLock APEX detectado."
+    echo [OK] Modulo DeviceLock APEX detectado. >> "%SUMMARY%"
+    set /a OK_COUNT+=1
 )
 
 echo. >> "%SUMMARY%"
@@ -144,16 +179,20 @@ echo. >> "%SUMMARY%"
 REM ============================================================
 REM 4. DLC SERVICES
 REM ============================================================
-call :SECTION "[4] SERVICIOS DLC"
+echo ============================================================ >> "%SUMMARY%"
+echo [4] SERVICIOS DLC >> "%SUMMARY%"
+echo ============================================================ >> "%SUMMARY%"
+echo. >> "%SUMMARY%"
 
 adb shell dumpsys activity services 2>nul | findstr /I "dlc devicelock DeviceLockService DeviceLockController" > "%TMP%"
 
 if errorlevel 1 (
-    call :INFO "No se detectaron servicios DLC visibles mediante diagnostico Android."
-echo. >> "%SUMMARY%"
+    echo [INFO] No se detectaron servicios DLC visibles mediante diagnostico Android. >> "%SUMMARY%"
+    set /a INFO_COUNT+=1
     echo Nota: Algunos fabricantes restringen o no exponen esta informacion mediante Activity Manager. Esto no representa necesariamente un problema de integracion DLC y no impide continuar con el proceso de validacion. >> "%SUMMARY%"
 ) else (
-    call :OK "Servicios relacionados con DLC o DeviceLock detectados."
+    echo [OK] Servicios relacionados con DLC o DeviceLock detectados. >> "%SUMMARY%"
+    set /a OK_COUNT+=1
 )
 
 echo. >> "%SUMMARY%"
@@ -161,18 +200,19 @@ echo. >> "%SUMMARY%"
 REM ============================================================
 REM 5. CARRIERCONFIG
 REM ============================================================
-call :SECTION "[5] CARRIERCONFIG"
-REM --- Propiedades SIM (pueden venir multi-SIM) ---
+echo ============================================================ >> "%SUMMARY%"
+echo [5] CARRIERCONFIG >> "%SUMMARY%"
+echo ============================================================ >> "%SUMMARY%"
+echo. >> "%SUMMARY%"
+
 for /f "delims=" %%A in ('adb shell getprop gsm.sim.state 2^>nul') do set "SIM_STATE_RAW=%%A"
 for /f "delims=" %%A in ('adb shell getprop gsm.sim.operator.numeric 2^>nul') do set "SIM_MCCMNC_RAW=%%A"
 for /f "delims=" %%A in ('adb shell getprop gsm.sim.operator.iso-country 2^>nul') do set "SIM_ISO_RAW=%%A"
 
-REM --- Tomar primer slot si hay multi-SIM ---
 for /f "tokens=1 delims=," %%A in ("%SIM_STATE_RAW%") do set "SIM_STATE=%%A"
 for /f "tokens=1 delims=," %%A in ("%SIM_MCCMNC_RAW%") do set "SIM_OPERATOR=%%A"
 for /f "tokens=1 delims=," %%A in ("%SIM_ISO_RAW%") do set "ISO_COUNTRY=%%A"
 
-REM --- Valores por defecto ---
 if "%SIM_STATE%"=="" set "SIM_STATE=N/A"
 if "%SIM_OPERATOR%"=="" set "SIM_OPERATOR=N/A"
 if "%ISO_COUNTRY%"=="" set "ISO_COUNTRY=N/A"
@@ -184,56 +224,62 @@ echo. >> "%SUMMARY%"
 
 echo %SIM_STATE% | findstr /I "ABSENT NOT_READY N/A" >nul
 if errorlevel 1 (
-    call :OK "SIM detectada o informacion SIM disponible."
+    echo [OK] SIM detectada o informacion SIM disponible. >> "%SUMMARY%"
+    set /a OK_COUNT+=1
 ) else (
-    call :INFO "SIM no detectada o informacion SIM no disponible."
-    REM echo Nota: Algunos fabricantes activan parametros CarrierConfig unicamente cuando existe una SIM valida o una personalizacion asociada al operador. >> "%SUMMARY%"
+    echo [INFO] SIM no detectada o informacion SIM no disponible. >> "%SUMMARY%"
+    set /a INFO_COUNT+=1
 )
 
-REM echo. >> "%SUMMARY%"
 adb shell dumpsys carrier_config 2>nul | findstr /I "call_screening_app" > "%TMP%"
 findstr /I "trustonic" "%TMP%" >nul
 
 if errorlevel 1 (
-    call :INFO "CALL SCREENING no detectado o no asociado a DLC."
-    REM echo Nota: En dispositivos Open Market o implementaciones que no utilizan gestion de llamadas, este parametro puede no estar presente y no debe considerarse un bloqueo para continuar la validacion. >> "%SUMMARY%"
+    echo [INFO] CALL SCREENING no detectado o no asociado a DLC. >> "%SUMMARY%"
+    set /a INFO_COUNT+=1
 ) else (
-    call :OK "CALL SCREENING asociado a DLC detectado."
+    echo [OK] CALL SCREENING asociado a DLC detectado. >> "%SUMMARY%"
+    set /a OK_COUNT+=1
 )
 
-REM echo. >> "%SUMMARY%"
 adb shell dumpsys carrier_config 2>nul | findstr /I "call_redirection_service_component_name_string" > "%TMP%"
 findstr /I "trustonic" "%TMP%" >nul
 
 if errorlevel 1 (
-    call :INFO "CALL REDIRECTION no detectado o no asociado a DLC."
-    REM echo Nota: En dispositivos Open Market o implementaciones que no utilizan gestion de llamadas, este parametro puede no estar presente y no debe considerarse un bloqueo para continuar la validacion. >> "%SUMMARY%"
+    echo [INFO] CALL REDIRECTION no detectado o no asociado a DLC. >> "%SUMMARY%"
+    set /a INFO_COUNT+=1
 ) else (
-    call :OK "CALL REDIRECTION asociado a DLC detectado."
+    echo [OK] CALL REDIRECTION asociado a DLC detectado. >> "%SUMMARY%"
+    set /a OK_COUNT+=1
 )
 
-REM echo. >> "%SUMMARY%"
 adb shell dumpsys carrier_config 2>nul | findstr /I "carrier_certificate_string_array" > "%TMP%"
 
 findstr /I "com.trustonic.telecoms.standard.dlc" "%TMP%" >nul
 if errorlevel 1 (
-    call :INFO "CERTIFICADO DLC no detectado en CarrierConfig."
+    echo [INFO] CERTIFICADO DLC no detectado en CarrierConfig. >> "%SUMMARY%"
+    set /a INFO_COUNT+=1
 ) else (
-    call :OK "CERTIFICADO DLC detectado en CarrierConfig."
+    echo [OK] CERTIFICADO DLC detectado en CarrierConfig. >> "%SUMMARY%"
+    set /a OK_COUNT+=1
 )
 
 findstr /I "com.trustonic.telecoms.standard.dpc" "%TMP%" >nul
 if errorlevel 1 (
-    call :INFO "CERTIFICADO DPC no detectado en CarrierConfig."
+    echo [INFO] CERTIFICADO DPC no detectado en CarrierConfig. >> "%SUMMARY%"
+    set /a INFO_COUNT+=1
 ) else (
-    call :OK "CERTIFICADO DPC detectado en CarrierConfig."
+    echo [OK] CERTIFICADO DPC detectado en CarrierConfig. >> "%SUMMARY%"
+    set /a OK_COUNT+=1
 )
 
 findstr /I "co.sitic.pp" "%TMP%" >nul
 if errorlevel 1 (
-    call :INFO "CERTIFICADO co.sitic.pp no detectado en CarrierConfig."
+    echo [INFO] CERTIFICADO co.sitic.pp no detectado en CarrierConfig. >> "%SUMMARY%"
+    set /a INFO_COUNT+=1
 ) else (
-    call :OK "CERTIFICADO co.sitic.pp detectado en CarrierConfig."
+    echo [OK] CERTIFICADO co.sitic.pp detectado en CarrierConfig. >> "%SUMMARY%"
+    set /a OK_COUNT+=1
 )
 
 echo. >> "%SUMMARY%"
@@ -244,52 +290,56 @@ echo. >> "%SUMMARY%"
 REM ============================================================
 REM 6. DEVELOPER MODE AND ADB
 REM ============================================================
-call :SECTION "[6] MODO DESARROLLADOR Y DEPURACION USB"
+echo ============================================================ >> "%SUMMARY%"
+echo [6] MODO DESARROLLADOR Y DEPURACION USB >> "%SUMMARY%"
+echo ============================================================ >> "%SUMMARY%"
+echo. >> "%SUMMARY%"
 
 for /f "delims=" %%A in ('adb shell settings get global development_settings_enabled 2^>nul') do set "DEV_MODE=%%A"
 for /f "delims=" %%A in ('adb shell settings get global adb_enabled 2^>nul') do set "ADB_ENABLED=%%A"
 
+if "%DEV_MODE%"=="" set "DEV_MODE=N/A"
+if "%ADB_ENABLED%"=="" set "ADB_ENABLED=N/A"
+
+echo Estado detectado: >> "%SUMMARY%"
+echo Opciones de desarrollador: %DEV_MODE% >> "%SUMMARY%"
+echo Depuracion USB: %ADB_ENABLED% >> "%SUMMARY%"
+echo. >> "%SUMMARY%"
+
 set "DEV_ADB_STATE=%DEV_MODE%_%ADB_ENABLED%"
 
 if "%DEV_ADB_STATE%"=="1_1" (
-    call :INFO "Opciones de desarrollador y Depuracion USB habilitadas. Esto es esperado para ejecutar la herramienta en un entorno controlado."
-    goto DEVADB_DONE
+    echo [INFO] Opciones de desarrollador y Depuracion USB habilitadas. Esto es esperado para ejecutar la herramienta en un entorno controlado. >> "%SUMMARY%"
+    set /a INFO_COUNT+=1
+) else (
+    if "%DEV_ADB_STATE%"=="0_0" (
+        echo [OK] Opciones de desarrollador y Depuracion USB deshabilitadas. Estado esperado para dispositivos comerciales. >> "%SUMMARY%"
+        set /a OK_COUNT+=1
+    ) else (
+        echo [INFO] Estado de Opciones de desarrollador o Depuracion USB no disponible o reportado de forma diferente por el fabricante. >> "%SUMMARY%"
+        set /a INFO_COUNT+=1
+    )
 )
 
-if "%DEV_ADB_STATE%"=="0_0" (
-    call :OK "Opciones de desarrollador y Depuracion USB deshabilitadas. Estado esperado para dispositivos comerciales."
-    goto DEVADB_DONE
-)
-
-if "%DEV_ADB_STATE%"=="1_0" (
-    call :INFO "Opciones de desarrollador habilitadas, pero Depuracion USB deshabilitada."
-    echo Nota: Para ejecutar DLC_Validator se requiere Depuracion USB habilitada y autorizacion ADB. >> "%SUMMARY%"
-    goto DEVADB_DONE
-)
-
-if "%DEV_ADB_STATE%"=="0_1" (
-    call :INFO "Depuracion USB habilitada con Opciones de desarrollador no reportadas como activas."
-    echo Nota: Algunos fabricantes pueden reportar estos valores de forma diferente. Validar el estado directamente en el dispositivo si es necesario. >> "%SUMMARY%"
-    goto DEVADB_DONE
-)
-
-call :INFO "Estado de Opciones de desarrollador o Depuracion USB no disponible. El fabricante puede no reportar estos valores de forma estandar."
-
-:DEVADB_DONE
 echo. >> "%SUMMARY%"
 
 REM ============================================================
 REM 7. CARRIER ID
 REM ============================================================
-call :SECTION "[7] INFORMACION COMPLEMENTARIA DE CARRIER"
+echo ============================================================ >> "%SUMMARY%"
+echo [7] INFORMACION COMPLEMENTARIA DE CARRIER >> "%SUMMARY%"
+echo ============================================================ >> "%SUMMARY%"
+echo. >> "%SUMMARY%"
 
 for /f "delims=" %%A in ('adb shell getprop persist.radio.carrier_id 2^>nul') do set "CARRIER_ID=%%A"
 
 if "%CARRIER_ID%"=="" (
-    call :INFO "Carrier ID no disponible."
+    echo [INFO] Carrier ID no disponible. >> "%SUMMARY%"
+    set /a INFO_COUNT+=1
     echo Nota: Algunos fabricantes no exponen esta informacion. La ausencia de Carrier ID no debe interpretarse como una falla de integracion DLC. >> "%SUMMARY%"
 ) else (
-    call :OK "Carrier ID detectado."
+    echo [OK] Carrier ID detectado. >> "%SUMMARY%"
+    set /a OK_COUNT+=1
 )
 
 echo. >> "%SUMMARY%"
@@ -297,9 +347,12 @@ echo. >> "%SUMMARY%"
 REM ============================================================
 REM FINAL RESULT
 REM ============================================================
-:END_REPORT
+:FINAL_REPORT
 
-call :SECTION "RESULTADO GENERAL"
+echo ============================================================ >> "%SUMMARY%"
+echo RESULTADO GENERAL >> "%SUMMARY%"
+echo ============================================================ >> "%SUMMARY%"
+echo. >> "%SUMMARY%"
 
 echo OK: %OK_COUNT% >> "%SUMMARY%"
 echo INFO: %INFO_COUNT% >> "%SUMMARY%"
@@ -326,39 +379,3 @@ echo Archivo generado: %SUMMARY%
 echo.
 pause
 exit /b
-
-REM ============================================================
-REM FUNCTIONS
-REM ============================================================
-
-:HEADER
-echo ============================================================ >> "%SUMMARY%"
-echo DLC VALIDATION REPORT >> "%SUMMARY%"
-echo Version de herramienta: 8.0.0 >> "%SUMMARY%"
-echo Formato de reporte: Summary v1.0 >> "%SUMMARY%"
-echo Fecha de ejecucion: %DATE% >> "%SUMMARY%"
-echo ============================================================ >> "%SUMMARY%"
-echo. >> "%SUMMARY%"
-goto :eof
-
-:SECTION
-echo ============================================================ >> "%SUMMARY%"
-echo %~1 >> "%SUMMARY%"
-echo ============================================================ >> "%SUMMARY%"
-echo. >> "%SUMMARY%"
-goto :eof
-
-:OK
-set /a OK_COUNT+=1
-echo [OK] %~1 >> "%SUMMARY%"
-goto :eof
-
-:INFO
-set /a INFO_COUNT+=1
-echo [INFO] %~1 >> "%SUMMARY%"
-goto :eof
-
-:REVIEW
-set /a REVIEW_COUNT+=1
-echo [REVIEW] %~1 >> "%SUMMARY%"
-goto :eof
