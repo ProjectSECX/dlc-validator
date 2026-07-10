@@ -25,8 +25,8 @@ if exist "%TMP%" del "%TMP%" >nul 2>&1
 
 echo ============================================================ >> "%SUMMARY%"
 echo DLC VALIDATION REPORT >> "%SUMMARY%"
-echo Version de herramienta: 8.0.0 >> "%SUMMARY%"
-echo Formato de reporte: Summary v1.0 >> "%SUMMARY%"
+echo Version de herramienta: 2.0 >> "%SUMMARY%"
+echo Formato de reporte: Summary v2.0 >> "%SUMMARY%"
 echo Fecha de ejecucion: %DATE% >> "%SUMMARY%"
 echo ============================================================ >> "%SUMMARY%"
 echo. >> "%SUMMARY%"
