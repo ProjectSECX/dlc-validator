@@ -4,8 +4,8 @@ REM DLC_Validator Summary
 REM InternalName: DLC_Validator_Summary
 REM Author: Mauricio Gutierrez
 REM Department: Security / QA / DeviceLock Integration
-REM ProductVersion: 2.0
-REM FileVersion: 2.0.0
+REM ProductVersion: 3.0
+REM FileVersion: 3.0.0
 REM Output: DLC_Validator_Report.txt
 REM ============================================================
 
@@ -25,8 +25,8 @@ if exist "%TMP%" del "%TMP%" >nul 2>&1
 
 echo ============================================================ >> "%SUMMARY%"
 echo DLC VALIDATION REPORT >> "%SUMMARY%"
-echo Version de herramienta: 2.0 >> "%SUMMARY%"
-echo Formato de reporte: Summary v2.0 >> "%SUMMARY%"
+echo Version de herramienta: 3.0 >> "%SUMMARY%"
+echo Formato de reporte: Summary v3.0 >> "%SUMMARY%"
 echo Fecha de ejecucion: %DATE% >> "%SUMMARY%"
 echo ============================================================ >> "%SUMMARY%"
 echo. >> "%SUMMARY%"
@@ -37,9 +37,36 @@ REM ============================================================
 echo [0] DISPOSITIVO CONECTADO >> "%SUMMARY%"
 echo. >> "%SUMMARY%"
 
+adb start-server >nul 2>&1
 adb devices > "%TMP%" 2>&1
-findstr /R /C:"device$" "%TMP%" >nul
 
+findstr /I "unauthorized" "%TMP%" >nul
+if not errorlevel 1 (
+    echo.
+    echo ============================================================
+    echo DISPOSITIVO NO AUTORIZADO PARA ADB
+    echo ============================================================
+    echo.
+    echo Revise la pantalla del telefono y acepte la clave RSA.
+    echo Seleccione Permitir siempre desde esta computadora.
+    echo.
+    echo Una vez aceptada la autorizacion, vuelva a ejecutar:
+    echo DLC Validator Summary.bat
+    echo.
+    pause
+    exit /b 10
+)
+
+findstr /I "offline" "%TMP%" >nul
+if not errorlevel 1 (
+    echo [REVIEW] Dispositivo detectado en estado OFFLINE mediante ADB. >> "%SUMMARY%"
+    set /a REVIEW_COUNT+=1
+    echo Recomendacion: Reconectar el cable USB, verificar la Depuracion USB y ejecutar nuevamente la herramienta. >> "%SUMMARY%"
+    echo. >> "%SUMMARY%"
+    goto FINAL_REPORT
+)
+
+findstr /R /C:"device$" "%TMP%" >nul
 if errorlevel 1 (
     echo [REVIEW] No se detecto ningun dispositivo autorizado por ADB. >> "%SUMMARY%"
     set /a REVIEW_COUNT+=1
@@ -48,7 +75,7 @@ if errorlevel 1 (
     goto FINAL_REPORT
 )
 
-echo [OK] Dispositivo detectado correctamente mediante ADB. >> "%SUMMARY%"
+echo [OK] Dispositivo detectado y autorizado correctamente mediante ADB. >> "%SUMMARY%"
 set /a OK_COUNT+=1
 echo. >> "%SUMMARY%"
 
@@ -154,14 +181,14 @@ echo [3] INTEGRACION DLC / TRUSTONIC >> "%SUMMARY%"
 echo ============================================================ >> "%SUMMARY%"
 echo. >> "%SUMMARY%"
 
-adb shell pm list packages 2>nul | findstr /I "dlc devicelock trustonic carrier telecoms telcelam teeservice tee" > "%TMP%"
+adb shell pm list packages 2>nul | findstr /I "com.google.android.devicelockcontroller" > "%TMP%"
 
 if errorlevel 1 (
-    echo [REVIEW] No se detectaron paquetes relacionados con DLC, DeviceLock o Trustonic. >> "%SUMMARY%"
+    echo [REVIEW] Google Device Lock Controller no detectado. >> "%SUMMARY%"
     set /a REVIEW_COUNT+=1
-    echo Recomendacion: Validar que el OEM haya integrado los componentes DLC conforme a la guia de integracion correspondiente. >> "%SUMMARY%"
+    echo Recomendacion: Validar que el OEM haya integrado Google Device Lock Controller conforme a la guia de integracion DLC. >> "%SUMMARY%"
 ) else (
-    echo [OK] Paquetes relacionados con DLC / DeviceLock detectados. >> "%SUMMARY%"
+    echo [OK] Google Device Lock Controller detectado. >> "%SUMMARY%"
     set /a OK_COUNT+=1
 )
 
@@ -170,10 +197,23 @@ adb shell pm list packages -f 2>nul | findstr /I "devicelock.apex com.android.de
 if errorlevel 1 (
     echo [INFO] No se detecto modulo DeviceLock APEX. >> "%SUMMARY%"
     set /a INFO_COUNT+=1
-    echo Nota: Algunos dispositivos pueden integrar componentes DLC como APK de sistema y no necesariamente como modulo APEX. >> "%SUMMARY%"
+    echo Nota: Algunos dispositivos pueden integrar componentes DeviceLock como APK de sistema y no necesariamente como modulo APEX. >> "%SUMMARY%"
 ) else (
     echo [OK] Modulo DeviceLock APEX detectado. >> "%SUMMARY%"
     set /a OK_COUNT+=1
+)
+
+adb shell pm list packages -d 2>nul | findstr /I "com.google.android.devicelockcontroller com.trustonic.telecoms.standard.dlc com.trustonic.telecoms.standard.dpc" > "%TMP%"
+
+if errorlevel 1 (
+    echo [OK] Paquetes DLC relacionados habilitados. >> "%SUMMARY%"
+    set /a OK_COUNT+=1
+) else (
+    echo [REVIEW] Se detectaron paquetes DLC relacionados deshabilitados. >> "%SUMMARY%"
+    set /a REVIEW_COUNT+=1
+    echo Paquetes deshabilitados detectados: >> "%SUMMARY%"
+    type "%TMP%" >> "%SUMMARY%"
+    echo Recomendacion: El OEM debe validar que los componentes requeridos para DLC se encuentren habilitados. >> "%SUMMARY%"
 )
 
 echo. >> "%SUMMARY%"
@@ -224,69 +264,62 @@ echo Operador SIM MCC/MNC: %SIM_OPERATOR% >> "%SUMMARY%"
 echo Pais ISO: %ISO_COUNTRY% >> "%SUMMARY%"
 echo. >> "%SUMMARY%"
 
-echo %SIM_STATE% | findstr /I "ABSENT NOT_READY N/A" >nul
-if errorlevel 1 (
-    echo [OK] SIM detectada o informacion SIM disponible. >> "%SUMMARY%"
+set "SIM_AVAILABLE=1"
+echo %SIM_STATE% | findstr /I "ABSENT NOT_READY UNKNOWN N/A" >nul
+if not errorlevel 1 set "SIM_AVAILABLE=0"
+
+if "%SIM_AVAILABLE%"=="1" (
+    echo [OK] SIM detectada e informacion disponible. >> "%SUMMARY%"
     set /a OK_COUNT+=1
 ) else (
     echo [INFO] SIM no detectada o informacion SIM no disponible. >> "%SUMMARY%"
     set /a INFO_COUNT+=1
 )
 
-adb shell dumpsys carrier_config 2>nul | findstr /I "call_screening_app" > "%TMP%"
-findstr /I "trustonic" "%TMP%" >nul
+adb shell dumpsys carrier_config 2>nul > "%TMP%"
 
+findstr /I "call_screening_app" "%TMP%" | findstr /I "com.trustonic.telecoms.standard.dlc" >nul
 if errorlevel 1 (
-    echo [INFO] CALL SCREENING no detectado o no asociado a DLC. >> "%SUMMARY%"
-    set /a INFO_COUNT+=1
+    if "%SIM_AVAILABLE%"=="1" (
+        echo [REVIEW] CALL SCREENING no detectado o no asociado a DLC. >> "%SUMMARY%"
+        set /a REVIEW_COUNT+=1
+    ) else (
+        echo [INFO] CALL SCREENING no detectado o no asociado a DLC. >> "%SUMMARY%"
+        set /a INFO_COUNT+=1
+    )
 ) else (
     echo [OK] CALL SCREENING asociado a DLC detectado. >> "%SUMMARY%"
     set /a OK_COUNT+=1
 )
 
-adb shell dumpsys carrier_config 2>nul | findstr /I "call_redirection_service_component_name_string" > "%TMP%"
-findstr /I "trustonic" "%TMP%" >nul
-
+findstr /I "call_redirection_service_component_name_string" "%TMP%" | findstr /I "com.trustonic.telecoms.standard.dlc" >nul
 if errorlevel 1 (
-    echo [INFO] CALL REDIRECTION no detectado o no asociado a DLC. >> "%SUMMARY%"
-    set /a INFO_COUNT+=1
+    if "%SIM_AVAILABLE%"=="1" (
+        echo [REVIEW] CALL REDIRECTION no detectado o no asociado a DLC. >> "%SUMMARY%"
+        set /a REVIEW_COUNT+=1
+    ) else (
+        echo [INFO] CALL REDIRECTION no detectado o no asociado a DLC. >> "%SUMMARY%"
+        set /a INFO_COUNT+=1
+    )
 ) else (
     echo [OK] CALL REDIRECTION asociado a DLC detectado. >> "%SUMMARY%"
     set /a OK_COUNT+=1
 )
 
-adb shell dumpsys carrier_config 2>nul | findstr /I "carrier_certificate_string_array" > "%TMP%"
-
-findstr /I "com.trustonic.telecoms.standard.dlc" "%TMP%" >nul
+findstr /I "carrier_config call_screening_app call_redirection_service_component_name_string" "%TMP%" >nul
 if errorlevel 1 (
-    echo [INFO] CERTIFICADO DLC no detectado en CarrierConfig. >> "%SUMMARY%"
+    echo [INFO] CarrierConfig no expuso informacion suficiente mediante diagnostico Android. >> "%SUMMARY%"
     set /a INFO_COUNT+=1
 ) else (
-    echo [OK] CERTIFICADO DLC detectado en CarrierConfig. >> "%SUMMARY%"
-    set /a OK_COUNT+=1
-)
-
-findstr /I "com.trustonic.telecoms.standard.dpc" "%TMP%" >nul
-if errorlevel 1 (
-    echo [INFO] CERTIFICADO DPC no detectado en CarrierConfig. >> "%SUMMARY%"
-    set /a INFO_COUNT+=1
-) else (
-    echo [OK] CERTIFICADO DPC detectado en CarrierConfig. >> "%SUMMARY%"
-    set /a OK_COUNT+=1
-)
-
-findstr /I "co.sitic.pp" "%TMP%" >nul
-if errorlevel 1 (
-    echo [INFO] CERTIFICADO co.sitic.pp no detectado en CarrierConfig. >> "%SUMMARY%"
-    set /a INFO_COUNT+=1
-) else (
-    echo [OK] CERTIFICADO co.sitic.pp detectado en CarrierConfig. >> "%SUMMARY%"
+    echo [OK] CarrierConfig disponible y consultado correctamente. >> "%SUMMARY%"
     set /a OK_COUNT+=1
 )
 
 echo. >> "%SUMMARY%"
 echo Nota CarrierConfig: >> "%SUMMARY%"
-echo Algunas validaciones dependen de la implementacion del fabricante, la presencia de SIM activa y la configuracion especifica del operador. En dispositivos Open Market o configuraciones que no utilizan funcionalidades avanzadas de CarrierConfig, algunos parametros pueden no estar disponibles. >> "%SUMMARY%"
+echo Algunas configuraciones pueden cargarse de forma dinamica segun la SIM, MCC/MNC, region, operador o capa de personalizacion del fabricante. >> "%SUMMARY%"
+echo La herramienta consulta la configuracion efectiva expuesta por Android mediante CarrierConfig. >> "%SUMMARY%"
+echo Si faltan parametros esperados, insertar una SIM activa del operador, reiniciar el dispositivo y repetir la prueba. >> "%SUMMARY%"
 echo. >> "%SUMMARY%"
 
 REM ============================================================
@@ -311,8 +344,8 @@ echo. >> "%SUMMARY%"
 set "DEV_ADB_STATE=%DEV_MODE%_%ADB_ENABLED%"
 
 if "%DEV_ADB_STATE%"=="1_1" (
-    echo [INFO] Opciones de desarrollador y Depuracion USB habilitadas. Esto es esperado para ejecutar la herramienta en un entorno controlado. >> "%SUMMARY%"
-    set /a INFO_COUNT+=1
+    echo [OK] Opciones de desarrollador y Depuracion USB habilitadas para la ejecucion de la herramienta. >> "%SUMMARY%"
+    set /a OK_COUNT+=1
 ) else (
     if "%DEV_ADB_STATE%"=="0_0" (
         echo [OK] Opciones de desarrollador y Depuracion USB deshabilitadas. Estado esperado para dispositivos comerciales. >> "%SUMMARY%"
@@ -336,9 +369,9 @@ echo. >> "%SUMMARY%"
 for /f "delims=" %%A in ('adb shell getprop persist.radio.carrier_id 2^>nul') do set "CARRIER_ID=%%A"
 
 if "%CARRIER_ID%"=="" (
-    echo [INFO] Carrier ID no disponible. >> "%SUMMARY%"
-    set /a INFO_COUNT+=1
-    echo Nota: Algunos fabricantes no exponen esta informacion. La ausencia de Carrier ID no debe interpretarse como una falla de integracion DLC. >> "%SUMMARY%"
+    echo [OK] Carrier ID no disponible - parametro no critico. >> "%SUMMARY%"
+    set /a OK_COUNT+=1
+    echo Nota: Algunos fabricantes no exponen esta informacion. La ausencia de Carrier ID no representa una falla de integracion DLC. >> "%SUMMARY%"
 ) else (
     echo [OK] Carrier ID detectado. >> "%SUMMARY%"
     set /a OK_COUNT+=1
@@ -363,11 +396,11 @@ echo. >> "%SUMMARY%"
 
 if %REVIEW_COUNT% GTR 0 (
     echo Estado general: VALIDACION COMPLETADA CON PUNTOS PARA REVISION >> "%SUMMARY%"
-    echo Recomendacion general: Revisar los puntos marcados como [REVIEW] antes de considerar el dispositivo listo para validacion final. >> "%SUMMARY%"
 ) else (
     echo Estado general: VALIDACION COMPLETADA >> "%SUMMARY%"
-    echo Resultado: No se identificaron puntos criticos para revision en el resumen generado. >> "%SUMMARY%"
 )
+
+echo Revise los elementos marcados como INFO y REVIEW en las secciones anteriores. >> "%SUMMARY%"
 
 echo. >> "%SUMMARY%"
 echo Archivo generado: %SUMMARY% >> "%SUMMARY%"
