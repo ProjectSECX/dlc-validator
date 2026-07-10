@@ -4,6 +4,8 @@ REM DLC_Validator Summary
 REM InternalName: DLC_Validator_Summary
 REM Author: Mauricio Gutierrez
 REM Department: Security / QA / DeviceLock Integration
+REM ProductVersion: 2.0
+REM FileVersion: 2.0.0
 REM Output: DLC_Validator_Report.txt
 REM ============================================================
 
