@@ -42,16 +42,14 @@ adb devices > "%TMP%" 2>&1
 
 findstr /I "unauthorized" "%TMP%" >nul
 if not errorlevel 1 (
+    echo [REVIEW] Dispositivo conectado pero no autorizado para ADB. >> "%SUMMARY%"
+    echo Accion: Acepte la clave RSA en el telefono y vuelva a ejecutar DLC Validator Summary. >> "%SUMMARY%"
+    set /a REVIEW_COUNT+=1
+
     echo.
-    echo ============================================================
-    echo DISPOSITIVO NO AUTORIZADO PARA ADB
-    echo ============================================================
-    echo.
-    echo Revise la pantalla del telefono y acepte la clave RSA.
-    echo Seleccione Permitir siempre desde esta computadora.
-    echo.
-    echo Una vez aceptada la autorizacion, vuelva a ejecutar:
-    echo DLC Validator Summary.bat
+    echo Dispositivo no autorizado para ADB.
+    echo Acepte la clave RSA en el telefono.
+    echo Luego vuelva a ejecutar DLC Validator Summary.
     echo.
     pause
     exit /b 10
