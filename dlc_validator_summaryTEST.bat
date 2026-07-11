@@ -315,7 +315,7 @@ if errorlevel 1 (
 
 echo. >> "%SUMMARY%"
 echo Nota CarrierConfig: >> "%SUMMARY%"
-echo En equipos Open Market o sin SIM, algunos datos pueden no estar disponibles. Si faltan resultados esperados, inserte una SIM activa de operador, reinicie el dispositivo y repita la prueba. >> "%SUMMARY%"
+echo Algunos datos necesarios para la gestion de llamadas pueden no estar disponibles en CarrierConfig. Inserte una SIM activa de operador, reinicie el dispositivo y repita la prueba. Esto puede ocurrir en equipos Open Market o sin SIM. >> "%SUMMARY%"
 echo. >> "%SUMMARY%"
 
 REM ============================================================
