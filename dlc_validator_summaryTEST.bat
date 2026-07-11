@@ -211,7 +211,7 @@ if errorlevel 1 (
     set /a REVIEW_COUNT+=1
     echo Paquetes deshabilitados detectados: >> "%SUMMARY%"
     type "%TMP%" >> "%SUMMARY%"
-    echo Recomendacion: El OEM debe validar que los componentes requeridos para DLC se encuentren habilitados. >> "%SUMMARY%"
+    echo Accion: Inserte una SIM activa, reinicie el dispositivo y repita la prueba. Algunas configuraciones pueden habilitarse despues de cargar el perfil del operador. >> "%SUMMARY%"
 )
 
 echo. >> "%SUMMARY%"
@@ -315,9 +315,7 @@ if errorlevel 1 (
 
 echo. >> "%SUMMARY%"
 echo Nota CarrierConfig: >> "%SUMMARY%"
-echo Algunas configuraciones pueden cargarse de forma dinamica segun la SIM, MCC/MNC, region, operador o capa de personalizacion del fabricante. >> "%SUMMARY%"
-echo La herramienta consulta la configuracion efectiva expuesta por Android mediante CarrierConfig. >> "%SUMMARY%"
-echo Si faltan parametros esperados, insertar una SIM activa del operador, reiniciar el dispositivo y repetir la prueba. >> "%SUMMARY%"
+En equipos Open Market o sin SIM, algunos datos pueden no estar disponibles. Si faltan resultados esperados, inserte una SIM activa de operador, reinicie el dispositivo y repita la prueba. >> "%SUMMARY%"
 echo. >> "%SUMMARY%"
 
 REM ============================================================
