@@ -81,7 +81,7 @@ REM ============================================================
 REM 1. DEVICE INFORMATION
 REM ============================================================
 echo ============================================================ >> "%SUMMARY%"
-echo [1] INFORMACION DEL DISPOSITIVO >> "%SUMMARY%"
+echo [1] INFORMACION DEL DISPOSITIVO - BUILD >> "%SUMMARY%"
 echo ============================================================ >> "%SUMMARY%"
 echo. >> "%SUMMARY%"
 
@@ -134,7 +134,7 @@ REM ============================================================
 REM 2. VERIFIED BOOT / BOOTLOADER
 REM ============================================================
 echo ============================================================ >> "%SUMMARY%"
-echo [2] ESTADO DE SEGURIDAD ANDROID >> "%SUMMARY%"
+echo [2] VERIFIED BOOT - SEGURIDAD DEL SISTEMA >> "%SUMMARY%"
 echo ============================================================ >> "%SUMMARY%"
 echo. >> "%SUMMARY%"
 
@@ -175,7 +175,7 @@ REM ============================================================
 REM 3. DLC PACKAGES / TRUSTONIC
 REM ============================================================
 echo ============================================================ >> "%SUMMARY%"
-echo [3] INTEGRACION DLC / TRUSTONIC >> "%SUMMARY%"
+echo [3] INTEGRACION DLC - PAQUETES DEL SISTEMA >> "%SUMMARY%"
 echo ============================================================ >> "%SUMMARY%"
 echo. >> "%SUMMARY%"
 
@@ -220,7 +220,7 @@ REM ============================================================
 REM 4. DLC SERVICES
 REM ============================================================
 echo ============================================================ >> "%SUMMARY%"
-echo [4] SERVICIOS DLC >> "%SUMMARY%"
+echo [4] SERVICIOS DLC - ACTIVITY MANAGER - SYSTEM SERVER >> "%SUMMARY%"
 echo ============================================================ >> "%SUMMARY%"
 echo. >> "%SUMMARY%"
 
@@ -241,7 +241,7 @@ REM ============================================================
 REM 5. CARRIERCONFIG
 REM ============================================================
 echo ============================================================ >> "%SUMMARY%"
-echo [5] CARRIERCONFIG >> "%SUMMARY%"
+echo [5] CARRIERCONFIG - GESTION DE LLAMADAS >> "%SUMMARY%"
 echo ============================================================ >> "%SUMMARY%"
 echo. >> "%SUMMARY%"
 
@@ -262,6 +262,8 @@ echo Operador SIM MCC/MNC: %SIM_OPERATOR% >> "%SUMMARY%"
 echo Pais ISO: %ISO_COUNTRY% >> "%SUMMARY%"
 echo. >> "%SUMMARY%"
 
+set "SHOW_CARRIER_NOTE=0"
+
 set "SIM_AVAILABLE=1"
 echo %SIM_STATE% | findstr /I "ABSENT NOT_READY UNKNOWN N/A" >nul
 if not errorlevel 1 set "SIM_AVAILABLE=0"
@@ -272,6 +274,7 @@ if "%SIM_AVAILABLE%"=="1" (
 ) else (
     echo [INFO] SIM no detectada o informacion SIM no disponible. >> "%SUMMARY%"
     set /a INFO_COUNT+=1
+    set "SHOW_CARRIER_NOTE=1"
 )
 
 adb shell dumpsys carrier_config 2>nul > "%TMP%"
@@ -281,9 +284,11 @@ if errorlevel 1 (
     if "%SIM_AVAILABLE%"=="1" (
         echo [REVIEW] CALL SCREENING no detectado o no asociado a DLC. >> "%SUMMARY%"
         set /a REVIEW_COUNT+=1
+        set "SHOW_CARRIER_NOTE=1"
     ) else (
         echo [INFO] CALL SCREENING no detectado o no asociado a DLC. >> "%SUMMARY%"
         set /a INFO_COUNT+=1
+        set "SHOW_CARRIER_NOTE=1"
     )
 ) else (
     echo [OK] CALL SCREENING asociado a DLC detectado. >> "%SUMMARY%"
@@ -295,9 +300,11 @@ if errorlevel 1 (
     if "%SIM_AVAILABLE%"=="1" (
         echo [REVIEW] CALL REDIRECTION no detectado o no asociado a DLC. >> "%SUMMARY%"
         set /a REVIEW_COUNT+=1
+        set "SHOW_CARRIER_NOTE=1"
     ) else (
         echo [INFO] CALL REDIRECTION no detectado o no asociado a DLC. >> "%SUMMARY%"
         set /a INFO_COUNT+=1
+        set "SHOW_CARRIER_NOTE=1"
     )
 ) else (
     echo [OK] CALL REDIRECTION asociado a DLC detectado. >> "%SUMMARY%"
@@ -308,21 +315,26 @@ findstr /I "carrier_config call_screening_app call_redirection_service_component
 if errorlevel 1 (
     echo [INFO] CarrierConfig no expuso informacion suficiente mediante diagnostico Android. >> "%SUMMARY%"
     set /a INFO_COUNT+=1
+    set "SHOW_CARRIER_NOTE=1"
 ) else (
     echo [OK] CarrierConfig disponible y consultado correctamente. >> "%SUMMARY%"
     set /a OK_COUNT+=1
 )
 
-echo. >> "%SUMMARY%"
-echo Nota CarrierConfig: >> "%SUMMARY%"
-echo Algunos datos necesarios para la gestion de llamadas pueden no estar disponibles en CarrierConfig. Inserte una SIM activa de operador, reinicie el dispositivo y repita la prueba. Esto puede ocurrir en equipos Open Market o sin SIM. >> "%SUMMARY%"
+if "%SHOW_CARRIER_NOTE%"=="1" (
+    echo. >> "%SUMMARY%"
+    echo Nota CarrierConfig: >> "%SUMMARY%"
+    echo Algunos datos necesarios para la gestion de llamadas pueden no estar disponibles en CarrierConfig. >> "%SUMMARY%"
+    echo Inserte una SIM activa del operador, reinicie el dispositivo y repita la prueba. Esto puede ocurrir en equipos Open Market o sin SIM. >> "%SUMMARY%"
+)
+
 echo. >> "%SUMMARY%"
 
 REM ============================================================
 REM 6. DEVELOPER MODE AND ADB
 REM ============================================================
 echo ============================================================ >> "%SUMMARY%"
-echo [6] MODO DESARROLLADOR Y DEPURACION USB >> "%SUMMARY%"
+echo [6] MODO DESARROLLADOR - ADB >> "%SUMMARY%"
 echo ============================================================ >> "%SUMMARY%"
 echo. >> "%SUMMARY%"
 
@@ -358,7 +370,7 @@ REM ============================================================
 REM 7. CARRIER ID
 REM ============================================================
 echo ============================================================ >> "%SUMMARY%"
-echo [7] INFORMACION COMPLEMENTARIA DE CARRIER >> "%SUMMARY%"
+echo [7] INFORMACION DEL OPERADOR - CARRIER ID >> "%SUMMARY%"
 echo ============================================================ >> "%SUMMARY%"
 echo. >> "%SUMMARY%"
 
@@ -391,12 +403,10 @@ echo REVIEW: %REVIEW_COUNT% >> "%SUMMARY%"
 echo. >> "%SUMMARY%"
 
 if %REVIEW_COUNT% GTR 0 (
-    echo Estado general: VALIDACION COMPLETADA CON PUNTOS PARA REVISION >> "%SUMMARY%"
+    echo Estado general: VALIDACION COMPLETADA - REVISAR ELEMENTOS MARCADOS >> "%SUMMARY%"
 ) else (
     echo Estado general: VALIDACION COMPLETADA >> "%SUMMARY%"
 )
-
-echo Revise los elementos marcados como INFO y REVIEW en las secciones anteriores. >> "%SUMMARY%"
 
 echo. >> "%SUMMARY%"
 echo Archivo generado: %SUMMARY% >> "%SUMMARY%"
